@@ -74,6 +74,7 @@ export default async function AdminTasksPage({
 
       <TaskFilters
         users={users}
+        withSearch
         values={{
           search: filters.search,
           status: filters.status,

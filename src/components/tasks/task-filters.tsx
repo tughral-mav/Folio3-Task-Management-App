@@ -6,7 +6,10 @@ const FIELD =
   "rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600";
 
 type TaskFiltersProps = {
-  users: UserRef[];
+  /** Assignee filter renders only when provided (admin surfaces — FR17).
+   *  Member surfaces omit it along with search (FR18). */
+  users?: UserRef[];
+  withSearch?: boolean;
   values: {
     search?: string;
     status?: string;
@@ -18,28 +21,34 @@ type TaskFiltersProps = {
 };
 
 /**
- * FR17: combinable search + filters, expressed as URL query params via a
- * plain GET form — server-rendered results, shareable URLs, zero client JS.
+ * FR17/FR18: combinable filters, expressed as URL query params via a plain
+ * GET form — server-rendered results, shareable URLs, zero client JS.
  */
-export function TaskFilters({ users, values }: TaskFiltersProps) {
+export function TaskFilters({
+  users,
+  withSearch = false,
+  values,
+}: TaskFiltersProps) {
   return (
     <form
       method="get"
       className="flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-4"
     >
-      <div className="min-w-48 flex-1">
-        <label htmlFor="f-search" className="block text-xs font-medium text-zinc-600">
-          Search
-        </label>
-        <input
-          id="f-search"
-          type="search"
-          name="q"
-          placeholder="Title, description, or person…"
-          defaultValue={values.search}
-          className={`${FIELD} mt-1 w-full`}
-        />
-      </div>
+      {withSearch ? (
+        <div className="min-w-48 flex-1">
+          <label htmlFor="f-search" className="block text-xs font-medium text-zinc-600">
+            Search
+          </label>
+          <input
+            id="f-search"
+            type="search"
+            name="q"
+            placeholder="Title, description, or person…"
+            defaultValue={values.search}
+            className={`${FIELD} mt-1 w-full`}
+          />
+        </div>
+      ) : null}
 
       <div>
         <label htmlFor="f-status" className="block text-xs font-medium text-zinc-600">
@@ -69,19 +78,21 @@ export function TaskFilters({ users, values }: TaskFiltersProps) {
         </select>
       </div>
 
-      <div>
-        <label htmlFor="f-assignee" className="block text-xs font-medium text-zinc-600">
-          Assignee
-        </label>
-        <select id="f-assignee" name="assignee" defaultValue={values.assignee ?? ""} className={`${FIELD} mt-1`}>
-          <option value="">Anyone</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.full_name || u.email}
-            </option>
-          ))}
-        </select>
-      </div>
+      {users ? (
+        <div>
+          <label htmlFor="f-assignee" className="block text-xs font-medium text-zinc-600">
+            Assignee
+          </label>
+          <select id="f-assignee" name="assignee" defaultValue={values.assignee ?? ""} className={`${FIELD} mt-1`}>
+            <option value="">Anyone</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.full_name || u.email}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
 
       <div>
         <label htmlFor="f-due-from" className="block text-xs font-medium text-zinc-600">
