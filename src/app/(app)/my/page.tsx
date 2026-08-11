@@ -1,24 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/session";
-import { listTasks } from "@/server/queries/tasks";
+import { listOpenTasks, listTasks } from "@/server/queries/tasks";
 import { TaskTable } from "@/components/tasks/task-table";
 import { isDueSoon, isOverdue } from "@/lib/utils/dates";
 
 export const metadata: Metadata = { title: "My Tasks" };
 
 /**
- * FR35 (first pass): member dashboard — needs-attention section (overdue /
- * blocked / due soon) + recent assigned tasks. Live stats/notifications
- * arrive with Epics 5–6. RLS scopes everything to the caller.
+ * FR35: member dashboard — needs-attention section (overdue / blocked / due
+ * soon) computed over ALL open tasks (Finding #2), plus recently-updated
+ * tasks. RLS scopes everything to the caller.
  */
 export default async function MemberDashboardPage() {
   const { profile } = await requireUser();
-  const { tasks } = await listTasks({ page: 1 });
+  const [open, { tasks }] = await Promise.all([
+    listOpenTasks(),
+    listTasks({ page: 1 }),
+  ]);
 
-  const open = tasks.filter(
-    (t) => t.status !== "COMPLETED" && t.status !== "CANCELLED",
-  );
   const attention = open.filter(
     (t) =>
       t.status === "BLOCKED" ||

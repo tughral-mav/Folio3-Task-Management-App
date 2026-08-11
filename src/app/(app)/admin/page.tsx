@@ -42,7 +42,7 @@ export default async function AdminDashboardPage() {
     {
       label: "Overdue",
       value: stats.overdue,
-      href: "/admin/tasks",
+      href: "/admin/tasks?overdue=1",
       alert: stats.overdue > 0,
     },
   ];

@@ -26,14 +26,19 @@ const priority = z.enum(TASK_PRIORITIES, { error: "Choose a priority." });
 
 const status = z.enum(TASK_STATUSES, { error: "Choose a valid status." });
 
-/** EC-T8: due date is required at creation. Accepts YYYY-MM-DD from
- *  <input type="date"> and normalizes to end-of-day local time. */
+/**
+ * EC-T8: due date is required at creation. Accepts YYYY-MM-DD from
+ * <input type="date"> and anchors it to **noon UTC** (Finding #3). Noon UTC
+ * keeps the same calendar day for every real-world timezone offset
+ * (−12…+13), so the day shown never drifts from the day the admin entered,
+ * regardless of server or viewer timezone.
+ */
 const dueDate = z
   .string()
   .min(1, "Due date is required.")
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date.")
   .transform((value, ctx) => {
-    const date = new Date(`${value}T23:59:59`);
+    const date = new Date(`${value}T12:00:00Z`);
     if (Number.isNaN(date.getTime())) {
       ctx.addIssue({ code: "custom", message: "Enter a valid date." });
       return z.NEVER;

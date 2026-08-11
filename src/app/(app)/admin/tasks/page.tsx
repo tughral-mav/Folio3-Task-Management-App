@@ -37,6 +37,7 @@ export default async function AdminTasksPage({
     assignee: first(params.assignee),
     dueFrom: first(params.dueFrom),
     dueTo: first(params.dueTo),
+    overdue: first(params.overdue) === "1",
     page: Number.isFinite(pageParam) ? pageParam : 1,
   };
 

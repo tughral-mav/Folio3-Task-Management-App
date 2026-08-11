@@ -2,6 +2,7 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/types/database";
 import type { TaskPriority, TaskStatus } from "@/lib/types/domain";
+import { sanitizeSearch } from "@/lib/utils/search";
 
 /**
  * Read-side queries for task surfaces. All run through the user-scoped
@@ -37,6 +38,7 @@ export type TaskListFilters = {
   assignee?: string; // user id
   dueFrom?: string; // YYYY-MM-DD
   dueTo?: string;
+  overdue?: boolean;
   page?: number;
 };
 
@@ -60,26 +62,28 @@ export async function listTasks(filters: TaskListFilters): Promise<{
   if (filters.assignee) query = query.eq("assigned_to", filters.assignee);
   if (filters.dueFrom) query = query.gte("due_date", `${filters.dueFrom}T00:00:00`);
   if (filters.dueTo) query = query.lte("due_date", `${filters.dueTo}T23:59:59`);
+  if (filters.overdue) {
+    // FR36/EC-T7: past due and still active.
+    query = query
+      .lt("due_date", new Date().toISOString())
+      .not("status", "in", "(COMPLETED,CANCELLED)");
+  }
 
-  const search = filters.search?.trim();
+  const search = filters.search ? sanitizeSearch(filters.search) : "";
   if (search) {
-    // FR17: title/description match, plus assignee name/email match.
-    const escaped = search.replace(/[%_,()]/g, " ").trim();
-    if (escaped) {
-      const { data: matchingUsers } = await supabase
-        .from("users")
-        .select("id")
-        .or(`full_name.ilike.%${escaped}%,email.ilike.%${escaped}%`);
-      const userIds = (matchingUsers ?? []).map((u) => u.id);
-      const clauses = [
-        `title.ilike.%${escaped}%`,
-        `description.ilike.%${escaped}%`,
-        ...(userIds.length > 0
-          ? [`assigned_to.in.(${userIds.join(",")})`]
-          : []),
-      ];
-      query = query.or(clauses.join(","));
-    }
+    // FR17: title/description match, plus assignee name/email match. `search`
+    // is allowlist-sanitized, so it is a safe ilike literal (Finding #1).
+    const { data: matchingUsers } = await supabase
+      .from("users")
+      .select("id")
+      .or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+    const userIds = (matchingUsers ?? []).map((u) => u.id);
+    const clauses = [
+      `title.ilike.%${search}%`,
+      `description.ilike.%${search}%`,
+      ...(userIds.length > 0 ? [`assigned_to.in.(${userIds.join(",")})`] : []),
+    ];
+    query = query.or(clauses.join(","));
   }
 
   const { data, error, count } = await query;
@@ -94,6 +98,28 @@ export async function listTasks(filters: TaskListFilters): Promise<{
     page,
     pageCount: Math.max(1, Math.ceil(total / TASKS_PAGE_SIZE)),
   };
+}
+
+/**
+ * Finding #2: the member dashboard's "needs attention" must consider ALL of
+ * the member's open tasks, not just the most-recent page — otherwise an
+ * overdue task sorting past page 1 would be dropped from the safety-net
+ * surface. RLS scopes this to the caller's own tasks. Bounded at `limit`
+ * (documented) rather than the 25-row list page.
+ */
+export async function listOpenTasks(limit = 200): Promise<TaskListItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(TASK_WITH_USERS)
+    .not("status", "in", "(COMPLETED,CANCELLED)")
+    .order("due_date", { ascending: true })
+    .limit(limit);
+  if (error) {
+    console.error("[listOpenTasks]", error.code, error.message);
+    return [];
+  }
+  return (data ?? []) as TaskListItem[];
 }
 
 export async function getTaskDetail(id: string): Promise<TaskDetail | null> {
