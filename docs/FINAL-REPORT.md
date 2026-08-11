@@ -39,12 +39,13 @@ Two roles, `ADMIN` and `TEAM_MEMBER` (default). Role lives only in the DB and is
 | Suite | Result |
 |---|---|
 | Unit (Vitest) — domain gate, overdue, validation, search sanitizer | 16/16 pass |
-| RLS / authorization (pg, real Postgres in CI) — IDOR, privilege escalation, admin-only, immutability, RPC rules | pass (CI `schema` job) |
+| RLS / authorization (pg, real Postgres in CI) — IDOR, privilege escalation, admin-only, immutability, RPC rules | 23/23 pass (CI `schema` job) |
+| E2E (Playwright, desktop + Pixel 7, session injection) | 28/28 pass (CI `e2e` job) |
 | Schema verification (migrations + seed + negative domain-gate test) | pass (CI) |
 | Production build / typecheck / lint | pass (CI + Vercel) |
-| Manual OAuth (real Google) — Tests 1,2,3,4,5 | pass (recorded; DB verified clean after Gmail rejection) |
+| Manual OAuth (real Google) — Tests 1,2,3,4,5 + cross-account 6,7,8 | pass (recorded; DB verified clean after Gmail rejection) |
 
-**Mandated tests mapping:** Tests 1–5 ✅ manual (real Google) + logic in RLS/unit; Test 3 also ✅ automated (DB layer); Tests 10, 11, 12 ✅ automated RLS suite; Tests 6, 7, 8, 9, 13 — logic implemented and unit/RLS-covered where applicable; full Playwright browser journeys are the documented follow-up (Story 7.2); Tests 6–8 cross-account manual loop deferred to production by the user.
+**Mandated tests mapping (all covered):** Tests 1–5 ✅ manual (real Google) + logic in unit/RLS; Test 3 also ✅ automated (DB layer + E2E redirect); Tests 6, 7, 9 ✅ automated E2E + manual production; Tests 10, 12 ✅ automated E2E (UI) **and** RLS (DB); Test 11 ✅ automated RLS; Test 8 ✅ manual production; Test 13 ✅ automated E2E mobile viewport (Pixel 7). Only iOS Safari/WebKit remains a manual spot-check.
 
 ## Security review
 
@@ -56,9 +57,9 @@ Live at **https://folio3-task-management-app.vercel.app** (Vercel Hobby, product
 
 ## Known limitations
 
-- Playwright browser-journey specs not yet written (harness ready); security-critical tests covered by the RLS suite + manual verification.
-- Cross-account manual loop (Tests 6–8) pending on production with a second Folio3 account.
-- No role-management UI (deferred by design); no directory sync (assignees must have logged in once); no user-deactivation UI; English-only; Google app in "Testing" status (test users only) until published.
+- iOS Safari (WebKit) is a manual spot-check; the automated mobile E2E project runs on Pixel 7 (Chromium).
+- No role-management UI (deferred by design); no directory sync (assignees must have logged in once); no user-deactivation UI; English-only.
+- Google OAuth app is in "Testing" status (only allow-listed test users can sign in) until the user publishes it to In Production — a one-click console action that does not affect the `@folio3.com` gate.
 
 ## Future improvements
 
