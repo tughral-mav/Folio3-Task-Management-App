@@ -37,6 +37,7 @@ yarn-error.log*
 # testing artifacts
 /test-results/
 /playwright-report/
+tests/e2e/.auth/
 
 # supabase local
 supabase/.temp

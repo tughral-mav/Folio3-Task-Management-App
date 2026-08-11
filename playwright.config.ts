@@ -1,22 +1,24 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "node:path";
 
 // E2E suite per docs/testing/test-strategy.md: runs against a local build +
-// local Supabase stack with injected sessions (no live Google in CI).
-// Mobile viewports cover Test 13 (360x640-class and 390x844-class devices).
+// local Supabase stack with injected sessions (no live Google in CI). Desktop
+// + mobile viewports give Test 13 coverage across every authenticated flow.
 export default defineConfig({
   testDir: "tests/e2e",
+  globalSetup: path.join(__dirname, "tests/e2e/global-setup.ts"),
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
+  workers: process.env.CI ? 2 : undefined,
+  reporter: process.env.CI ? [["github"], ["list"]] : "list",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
     trace: "on-first-retry",
   },
   projects: [
-    { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile-android", use: { ...devices["Pixel 7"] } },
-    { name: "mobile-ios", use: { ...devices["iPhone 14"] } },
+    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
     command: "npm run build && npm run start",
