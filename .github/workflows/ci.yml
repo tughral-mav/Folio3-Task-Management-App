@@ -31,10 +31,15 @@ jobs:
       - run: npm run build
 
   schema:
-    name: Migrations + seed + RLS smoke (local Supabase)
+    name: Migrations + seed + schema verify + RLS suite (local Supabase)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -44,3 +49,9 @@ jobs:
         run: supabase db start
       - name: Verify schema, triggers, and domain gate
         run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f scripts/verify-schema.sql
+      # Adversarial RLS/authorization suite (Story 7.1): IDOR, privilege
+      # escalation, admin-only actions, immutability — Tests 10-12 + SEC-8.
+      - name: RLS / authorization suite
+        run: npm run test:rls
+        env:
+          SUPABASE_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
