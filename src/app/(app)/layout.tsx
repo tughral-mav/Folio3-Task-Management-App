@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/session";
 import { signOutAction } from "@/server/actions/auth";
+import { NotificationBell } from "@/components/notifications/bell";
+import { RealtimeRefresher } from "@/components/notifications/realtime-refresher";
 
 /**
  * Authenticated shell (FR5/FR6). requireUser() re-checks the session and
@@ -21,7 +23,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             Folio3 <span className="text-blue-600">Task Manager</span>
           </Link>
           <div className="flex items-center gap-3">
-            {/* Notification bell + badge arrive with Epic 5 (FR29) */}
+            <NotificationBell />
             <span className="hidden text-sm text-zinc-600 sm:inline">
               {profile.full_name || profile.email}
             </span>
@@ -54,6 +56,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         {children}
       </main>
+      <RealtimeRefresher userId={profile.id} />
     </div>
   );
 }
