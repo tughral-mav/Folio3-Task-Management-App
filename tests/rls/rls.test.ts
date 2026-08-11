@@ -40,6 +40,16 @@ async function obtainsNoRows(p: Promise<unknown[]>): Promise<boolean> {
   }
 }
 
+/** A forbidden write affects nothing — either the grant is absent (throws
+ *  permission-denied) or RLS filters it to zero rows. Both mean "blocked". */
+async function writeBlocked(p: Promise<unknown[]>): Promise<boolean> {
+  try {
+    return (await p).length === 0;
+  } catch {
+    return true;
+  }
+}
+
 beforeAll(async () => {
   client = makeClient();
   await client.connect();
@@ -123,32 +133,35 @@ describe("tasks mutation (Test 12 admin-only)", () => {
 
   it("member cannot directly update a task they are assigned (status bypass)", async () => {
     await asUser(client, MEMBER_A, async (q) => {
-      const rows = await q(
-        "update public.tasks set status = 'COMPLETED' where id = $1 returning id",
-        [TASK_A1],
+      const blocked = await writeBlocked(
+        q(
+          "update public.tasks set status = 'COMPLETED' where id = $1 returning id",
+          [TASK_A1],
+        ),
       );
-      // RLS has no member UPDATE policy → zero rows affected, no error.
-      expect(rows).toHaveLength(0);
+      expect(blocked).toBe(true);
     });
   });
 
   it("member cannot reassign someone else's task", async () => {
     await asUser(client, MEMBER_A, async (q) => {
-      const rows = await q(
-        "update public.tasks set assigned_to = $1 where id = $2 returning id",
-        [MEMBER_A, TASK_B3],
+      const blocked = await writeBlocked(
+        q(
+          "update public.tasks set assigned_to = $1 where id = $2 returning id",
+          [MEMBER_A, TASK_B3],
+        ),
       );
-      expect(rows).toHaveLength(0);
+      expect(blocked).toBe(true);
     });
   });
 
   it("nobody can delete a task (no DELETE path, A1)", async () => {
     await asUser(client, ADMIN, async (q) => {
-      const rows = await q(
-        "delete from public.tasks where id = $1 returning id",
-        [TASK_A1],
+      // No DELETE grant to authenticated → permission denied (blocked).
+      const blocked = await writeBlocked(
+        q("delete from public.tasks where id = $1 returning id", [TASK_A1]),
       );
-      expect(rows).toHaveLength(0);
+      expect(blocked).toBe(true);
     });
   });
 
@@ -178,31 +191,32 @@ describe("tasks mutation (Test 12 admin-only)", () => {
 describe("privilege escalation (Test 11)", () => {
   it("member cannot change their own role via direct update", async () => {
     await asUser(client, MEMBER_A, async (q) => {
-      const rows = await q(
-        "update public.users set role = 'ADMIN' where id = $1 returning id",
-        [MEMBER_A],
+      // No UPDATE grant on users for authenticated → blocked; even if a
+      // policy existed, the identity guard trigger is the second line.
+      const blocked = await writeBlocked(
+        q("update public.users set role = 'ADMIN' where id = $1 returning id", [
+          MEMBER_A,
+        ]),
       );
-      // No user UPDATE policy for authenticated → zero rows; guard trigger
-      // is the second line if a policy ever appeared.
-      expect(rows).toHaveLength(0);
+      expect(blocked).toBe(true);
     });
     // Confirm the role really did not change (fresh transaction, admin view).
     await asUser(client, ADMIN, async (q) => {
-      const rows = (await q(
-        "select role from public.users where id = $1",
-        [MEMBER_A],
-      )) as { role: string }[];
+      const rows = (await q("select role from public.users where id = $1", [
+        MEMBER_A,
+      ])) as { role: string }[];
       expect(rows[0].role).toBe("TEAM_MEMBER");
     });
   });
 
   it("member cannot promote another user", async () => {
     await asUser(client, MEMBER_A, async (q) => {
-      const rows = await q(
-        "update public.users set role = 'ADMIN' where id = $1 returning id",
-        [MEMBER_B],
+      const blocked = await writeBlocked(
+        q("update public.users set role = 'ADMIN' where id = $1 returning id", [
+          MEMBER_B,
+        ]),
       );
-      expect(rows).toHaveLength(0);
+      expect(blocked).toBe(true);
     });
   });
 });
@@ -225,12 +239,14 @@ describe("task_updates immutability (A3 / SEC-18)", () => {
 
   it("nobody can update or delete a progress update", async () => {
     await asUser(client, ADMIN, async (q) => {
-      const upd = await q(
-        "update public.task_updates set body = 'tampered' returning id",
-      );
-      expect(upd).toHaveLength(0);
-      const del = await q("delete from public.task_updates returning id");
-      expect(del).toHaveLength(0);
+      expect(
+        await writeBlocked(
+          q("update public.task_updates set body = 'tampered' returning id"),
+        ),
+      ).toBe(true);
+      expect(
+        await writeBlocked(q("delete from public.task_updates returning id")),
+      ).toBe(true);
     });
   });
 });
@@ -238,12 +254,14 @@ describe("task_updates immutability (A3 / SEC-18)", () => {
 describe("task_activity append-only (SEC-17)", () => {
   it("nobody can update or delete activity", async () => {
     await asUser(client, ADMIN, async (q) => {
-      const upd = await q(
-        "update public.task_activity set type = 'TASK_UPDATED' returning id",
-      );
-      expect(upd).toHaveLength(0);
-      const del = await q("delete from public.task_activity returning id");
-      expect(del).toHaveLength(0);
+      expect(
+        await writeBlocked(
+          q("update public.task_activity set type = 'TASK_UPDATED' returning id"),
+        ),
+      ).toBe(true);
+      expect(
+        await writeBlocked(q("delete from public.task_activity returning id")),
+      ).toBe(true);
     });
   });
 });
@@ -260,14 +278,16 @@ describe("notifications ownership (FR31 / EC-N2)", () => {
 
   it("a member cannot mark someone else's notification read", async () => {
     // Seeded progress update notified the task creator (ADMIN). MEMBER_A
-    // must not be able to touch it.
+    // must not be able to touch it (RLS USING recipient=self → zero rows).
     await asUser(client, MEMBER_A, async (q) => {
-      const rows = await q(
-        `update public.notifications set read_at = now()
-         where recipient_id = $1 returning id`,
-        [ADMIN],
+      const blocked = await writeBlocked(
+        q(
+          `update public.notifications set read_at = now()
+           where recipient_id = $1 returning id`,
+          [ADMIN],
+        ),
       );
-      expect(rows).toHaveLength(0);
+      expect(blocked).toBe(true);
     });
   });
 
