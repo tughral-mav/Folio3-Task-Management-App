@@ -18,21 +18,21 @@ test("member sees their own assigned tasks, not others' (FR14)", async ({
   await expect(page.getByText("Update onboarding docs")).toHaveCount(0);
 });
 
-test("member submits a progress update (Test 7)", async ({ page }) => {
+test("member submits a progress update (Test 7)", async ({ page }, testInfo) => {
+  // Unique per run: progress updates are immutable and accumulate, so
+  // identical text across projects/retries would match multiple rows.
+  const body = `Progress note ${testInfo.project.name} ${Date.now()}`;
+
   await page.goto("/my/tasks");
   await visibleTaskLink(page, /prepare q3 report/i).click();
 
-  await page
-    .getByLabel(/what have you completed/i)
-    .fill("Drafted the first two sections.");
+  await page.getByLabel(/what have you completed/i).fill(body);
   await page.getByLabel(/progress %/i).fill("40");
   await page.getByRole("button", { name: /submit update/i }).click();
 
   await expect(page.getByText(/progress submitted/i)).toBeVisible();
   // The immutable update now appears in the list.
-  await expect(
-    page.getByText("Drafted the first two sections."),
-  ).toBeVisible();
+  await expect(page.getByText(body)).toBeVisible();
 });
 
 test("opening a notification marks it read and drops the badge (Test 9)", async ({
