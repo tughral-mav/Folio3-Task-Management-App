@@ -16,6 +16,29 @@ export function isOverdue(
   return due.getTime() < now.getTime();
 }
 
+/** Consistent date rendering; server timestamps, viewer-local display (EC-T7). */
+export function formatDate(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+export function formatDateTime(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 /** Due within the next `hours` (and not overdue/closed) — "needs attention" (FR35). */
 export function isDueSoon(
   dueDate: string | Date,
