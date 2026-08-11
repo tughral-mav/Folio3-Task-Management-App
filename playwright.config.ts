@@ -7,10 +7,13 @@ import path from "node:path";
 export default defineConfig({
   testDir: "tests/e2e",
   globalSetup: path.join(__dirname, "tests/e2e/global-setup.ts"),
-  fullyParallel: true,
+  // Serial in CI: the whole suite shares one Supabase DB, so serializing
+  // removes cross-spec races (e.g. the admin test creating notifications the
+  // member notification test counts).
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  workers: 1,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",

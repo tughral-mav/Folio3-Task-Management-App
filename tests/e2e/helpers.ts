@@ -8,6 +8,22 @@ export const MEMBER_STATE = path.join(__dirname, ".auth/member.json");
 // check: member A must not be able to open it.
 export const OTHER_MEMBERS_TASK = "00000000-0000-4000-9000-000000000003";
 
+/**
+ * The responsive TaskTable renders both a mobile card list and a desktop
+ * table in the DOM (CSS toggles which is shown), so a task title appears
+ * twice. This resolves to the copy actually visible at the current viewport.
+ */
+export function visibleTask(page: Page, name: string | RegExp) {
+  return page.getByText(name).filter({ visible: true }).first();
+}
+
+export function visibleTaskLink(page: Page, name: string | RegExp) {
+  return page
+    .getByRole("link", { name })
+    .filter({ visible: true })
+    .first();
+}
+
 /** NFR1/Test 13: the page must never scroll horizontally. */
 export async function expectNoHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(

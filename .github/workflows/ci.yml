@@ -83,6 +83,7 @@ jobs:
           echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$CFG" | jq -r .SERVICE_ROLE_KEY)" >> "$GITHUB_ENV"
           echo "FOLIO3_GOOGLE_DOMAIN=folio3.com" >> "$GITHUB_ENV"
           echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000" >> "$GITHUB_ENV"
+          echo "E2E=1" >> "$GITHUB_ENV"
       - name: Run E2E suite
         run: npm run test:e2e
       - uses: actions/upload-artifact@v4

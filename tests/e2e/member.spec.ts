@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { MEMBER_STATE, unreadBadgeCount } from "./helpers";
+import {
+  MEMBER_STATE,
+  unreadBadgeCount,
+  visibleTask,
+  visibleTaskLink,
+} from "./helpers";
 
 test.use({ storageState: MEMBER_STATE });
 
@@ -8,14 +13,14 @@ test("member sees their own assigned tasks, not others' (FR14)", async ({
 }) => {
   await page.goto("/my/tasks");
   // Seeded tasks assigned to member A.
-  await expect(page.getByText("Prepare Q3 report")).toBeVisible();
-  // Seeded task assigned to member B must not appear.
+  await expect(visibleTask(page, "Prepare Q3 report")).toBeVisible();
+  // Seeded task assigned to member B must not appear at all.
   await expect(page.getByText("Update onboarding docs")).toHaveCount(0);
 });
 
 test("member submits a progress update (Test 7)", async ({ page }) => {
   await page.goto("/my/tasks");
-  await page.getByRole("link", { name: /prepare q3 report/i }).click();
+  await visibleTaskLink(page, /prepare q3 report/i).click();
 
   await page
     .getByLabel(/what have you completed/i)

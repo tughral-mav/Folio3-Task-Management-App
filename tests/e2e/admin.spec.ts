@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { ADMIN_STATE, expectNoHorizontalOverflow } from "./helpers";
+import {
+  ADMIN_STATE,
+  expectNoHorizontalOverflow,
+  visibleTask,
+} from "./helpers";
 
 test.use({ storageState: ADMIN_STATE });
 
@@ -29,5 +33,5 @@ test("admin creates and assigns a task (Test 6)", async ({ page }, testInfo) => 
 
   // And it is now findable in the global task list.
   await page.goto("/admin/tasks");
-  await expect(page.getByText(title)).toBeVisible();
+  await expect(visibleTask(page, title)).toBeVisible();
 });
