@@ -4,7 +4,7 @@
 
 ## 1. Topology
 
-- **Primary (Phase 1):** Vercel free tier, auto-deploying from GitHub (`main` = production; PR previews optional). Region close to the team.
+- **Primary (Phase 1):** Vercel free tier, auto-deploying from GitHub. **Production branch = `develop`** (stakeholder directive 2026-08-11: all work lives on `develop`; `main` is frozen until an explicit release promotion). Region close to the team.
 - **Portability requirement (Decision D5):** the app must also run self-hosted on an Azure/AWS VM with **zero code changes**:
   - Next.js `output: 'standalone'`; provided `Dockerfile` builds a runnable image.
   - No Vercel-proprietary services (KV/Blob/Edge Config/Vercel Cron); all state in Supabase.

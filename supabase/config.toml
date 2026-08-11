@@ -1,0 +1,7 @@
+# Supabase CLI configuration. Minimal on purpose — unspecified settings use
+# CLI defaults. project_id is the local identifier, not the cloud ref.
+project_id = "folio3-task-management-app"
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]

@@ -1,0 +1,46 @@
+# Story 1.3: CI quality gate — lint, typecheck, unit tests, build, and
+# database verification (migrations + seed + domain-gate assertion) on a real
+# local Supabase stack (runners provide Docker).
+name: CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  quality:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      FOLIO3_GOOGLE_DOMAIN: folio3.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  schema:
+    name: Migrations + seed + RLS smoke (local Supabase)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      # Applies every migration and the seed to a fresh Postgres; the seed
+      # itself exercises the domain-gate/provisioning/fan-out triggers.
+      - name: Start local database from migrations
+        run: supabase db start
+      - name: Verify schema, triggers, and domain gate
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f scripts/verify-schema.sql

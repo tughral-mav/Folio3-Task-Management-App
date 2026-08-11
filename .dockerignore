@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+docs
+tests
+test-results
+playwright-report
+supabase/.temp
+supabase/.branches
+.env*
+!.env.example
+*.md
