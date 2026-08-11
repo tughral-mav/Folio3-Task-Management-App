@@ -25,6 +25,9 @@ export async function GET(request: NextRequest) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     // Includes the trigger-rejection path ("database error saving new user").
+    // Detail stays server-side (SEC-16) — seen once as a transient PKCE
+    // failure on a first-ever login attempt (retry succeeded).
+    console.error("[auth/callback] exchange failed:", error.code, error.message);
     return NextResponse.redirect(`${origin}/access-denied?reason=denied`);
   }
 
