@@ -9,7 +9,9 @@ Performed by the human (tughralhussain@folio3.com) per the [test strategy §2/§
 | 2 — Existing user login | Retry after first-attempt hiccup | ✅ PASS — no duplicate row (auth_users=1, profiles=1), role preserved |
 | 5 — Admin login | Operator SQL promotion (`role='ADMIN'`), page refresh | ✅ PASS — Admin Dashboard rendered without re-login (per-request DB role read, EC-R2) |
 | 3 — Non-Folio3 login | Personal Gmail attempt | ✅ PASS — Access Denied; DB verified clean: 0 non-folio3 rows in `auth.users` (transaction-abort gate leaves no trace) |
-| 6/7/8 — Cross-account task/progress/notification loop | Second @folio3.com account belongs to the user's lead | ⏳ DEFERRED to post-deployment verification (user decision) |
+| 6 — Admin creates & assigns task | Real cross-account run on production | ✅ PASS — task "Sojao" assigned to huzaifamusharraf@folio3.com; DB-verified: TASK_CREATED activity + TASK_ASSIGNED notification to the member; self-assigned task produced zero notifications (EC-N1 self-suppression) |
+| 1/4 — New user provisioning (2nd account) | huzaifamusharraf@folio3.com first login | ✅ PASS — auto-created as TEAM_MEMBER, name synced, exactly one row, no duplicate |
+| 7/8 — Progress + task-update loop | Member reports progress; admin edits task | ✅ PASS — confirmed by the user on production (live badge + view updates) |
 
 Additional live observations:
 
