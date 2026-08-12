@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
+import { PageHeader } from "@/components/ui/page-header";
 import { getAdminStats } from "@/server/queries/dashboard";
 import { listTasks } from "@/server/queries/tasks";
 import { listRecentActivity } from "@/server/queries/activity";
@@ -49,12 +50,10 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">
-            Admin Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600">
+      <PageHeader
+        title="Admin Dashboard"
+        subtitle={
+          <>
             Welcome, {profile.full_name || profile.email}.
             {unread > 0 ? (
               <>
@@ -65,15 +64,25 @@ export default async function AdminDashboardPage() {
                 .
               </>
             ) : null}
-          </p>
-        </div>
-        <Link
-          href="/admin/tasks/new"
-          className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-        >
-          New task
-        </Link>
-      </div>
+          </>
+        }
+        actions={
+          <>
+            <Link
+              href="/admin/board"
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              Board
+            </Link>
+            <Link
+              href="/admin/tasks/new"
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              New task
+            </Link>
+          </>
+        }
+      />
 
       <section aria-label="Task statistics">
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

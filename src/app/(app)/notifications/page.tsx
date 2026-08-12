@@ -4,6 +4,7 @@ import {
   markAllReadAction,
   openNotificationAction,
 } from "@/server/actions/notifications";
+import { PageHeader } from "@/components/ui/page-header";
 import { formatDateTime } from "@/lib/utils/dates";
 
 export const metadata: Metadata = { title: "Notifications" };
@@ -16,19 +17,21 @@ export default async function NotificationsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-zinc-900">Notifications</h1>
-        {hasUnread ? (
-          <form action={markAllReadAction}>
-            <button
-              type="submit"
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-            >
-              Mark all as read
-            </button>
-          </form>
-        ) : null}
-      </div>
+      <PageHeader
+        title="Notifications"
+        actions={
+          hasUnread ? (
+            <form action={markAllReadAction}>
+              <button
+                type="submit"
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              >
+                Mark all as read
+              </button>
+            </form>
+          ) : null
+        }
+      />
 
       {notifications.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-10 text-center text-sm text-zinc-500">

@@ -122,6 +122,26 @@ export async function listOpenTasks(limit = 200): Promise<TaskListItem[]> {
   return (data ?? []) as TaskListItem[];
 }
 
+/**
+ * FR37: tasks for a board view — all non-cancelled tasks the caller may see
+ * (admin: all; member: own, via RLS), across every board column. Bounded at
+ * `limit` (documented) rather than the 25-row list page.
+ */
+export async function listBoardTasks(limit = 200): Promise<TaskListItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(TASK_WITH_USERS)
+    .neq("status", "CANCELLED")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error("[listBoardTasks]", error.code, error.message);
+    return [];
+  }
+  return (data ?? []) as TaskListItem[];
+}
+
 export async function getTaskDetail(id: string): Promise<TaskDetail | null> {
   const supabase = await createSupabaseServerClient();
   const { data: task, error } = await supabase

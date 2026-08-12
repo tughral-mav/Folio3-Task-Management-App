@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listRecentActivity } from "@/server/queries/activity";
+import { PageHeader } from "@/components/ui/page-header";
 import { formatDateTime } from "@/lib/utils/dates";
 
 export const metadata: Metadata = { title: "My Activity" };
@@ -11,12 +12,10 @@ export default async function MyActivityPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">My Activity</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          Recent events on tasks assigned to you.
-        </p>
-      </div>
+      <PageHeader
+        title="My Activity"
+        subtitle="Recent events on tasks assigned to you."
+      />
       {activity.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-10 text-center text-sm text-zinc-500">
           No activity yet — it appears here once tasks are assigned to you.

@@ -4,8 +4,12 @@ import { expect, type Page } from "@playwright/test";
 export const ADMIN_STATE = path.join(__dirname, ".auth/admin.json");
 export const MEMBER_STATE = path.join(__dirname, ".auth/member.json");
 
-// Seeded task assigned to member B (supabase/seed.sql) — used for the IDOR
-// check: member A must not be able to open it.
+export const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
+
+// Seeded task assigned to member A (supabase/seed.sql) — "Prepare Q3 report".
+export const MEMBER_TASK = "00000000-0000-4000-9000-000000000001";
+// Seeded task assigned to member B — used for the IDOR check: member A must
+// not be able to open it.
 export const OTHER_MEMBERS_TASK = "00000000-0000-4000-9000-000000000003";
 
 /**

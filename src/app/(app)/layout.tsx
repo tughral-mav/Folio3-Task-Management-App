@@ -16,12 +16,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     profile.role === "ADMIN"
       ? [
           { href: "/admin", label: "Dashboard" },
+          { href: "/admin/board", label: "Board" },
           { href: "/admin/tasks", label: "Tasks" },
           { href: "/admin/team", label: "Team" },
           { href: "/notifications", label: "Notifications" },
         ]
       : [
           { href: "/my", label: "Dashboard" },
+          { href: "/my/board", label: "Board" },
           { href: "/my/tasks", label: "My Tasks" },
           { href: "/my/activity", label: "Activity" },
           { href: "/notifications", label: "Notifications" },

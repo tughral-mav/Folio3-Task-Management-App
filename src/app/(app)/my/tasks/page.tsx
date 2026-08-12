@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { listTasks } from "@/server/queries/tasks";
+import { PageHeader } from "@/components/ui/page-header";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { TaskTable } from "@/components/tasks/task-table";
 import {
@@ -45,12 +47,18 @@ export default async function MyTasksPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">My Tasks</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          {count} task{count === 1 ? "" : "s"} assigned to you.
-        </p>
-      </div>
+      <PageHeader
+        title="My Tasks"
+        subtitle={`${count} task${count === 1 ? "" : "s"} assigned to you.`}
+        actions={
+          <Link
+            href="/my/board"
+            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          >
+            Board view
+          </Link>
+        }
+      />
 
       <TaskFilters
         values={{

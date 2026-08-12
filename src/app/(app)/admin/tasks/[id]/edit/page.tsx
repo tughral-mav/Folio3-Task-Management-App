@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { updateTaskAction } from "@/server/actions/tasks";
 import { getTaskDetail, listUsers } from "@/server/queries/tasks";
+import { PageHeader } from "@/components/ui/page-header";
 import { TaskForm } from "@/components/tasks/task-form";
 
 export const metadata: Metadata = { title: "Edit task" };
@@ -20,19 +20,11 @@ export default async function EditTaskPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href={`/admin/tasks/${task.id}`}
-          className="text-sm text-zinc-500 hover:underline"
-        >
-          ← {task.title}
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-zinc-900">Edit task</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          The assignee (and the task creator, if someone else) are notified of
-          the change.
-        </p>
-      </div>
+      <PageHeader
+        back={{ href: `/admin/tasks/${task.id}`, label: task.title }}
+        title="Edit task"
+        subtitle="The assignee (and the task creator, if someone else) are notified of the change."
+      />
       <TaskForm
         action={boundAction}
         users={users}

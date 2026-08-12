@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { listUsers } from "@/server/queries/tasks";
+import { PageHeader } from "@/components/ui/page-header";
 import { formatDate } from "@/lib/utils/dates";
 
 export const metadata: Metadata = { title: "Team" };
@@ -10,13 +11,10 @@ export default async function TeamPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Team</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          Everyone who has signed in at least once. Colleagues appear here
-          automatically after their first Google sign-in.
-        </p>
-      </div>
+      <PageHeader
+        title="Team"
+        subtitle="Everyone who has signed in at least once. Colleagues appear here automatically after their first Google sign-in."
+      />
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {users.map((u) => (
           <li

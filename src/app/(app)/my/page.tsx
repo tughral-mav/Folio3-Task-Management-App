@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/session";
 import { listOpenTasks, listTasks } from "@/server/queries/tasks";
+import { PageHeader } from "@/components/ui/page-header";
 import { TaskTable } from "@/components/tasks/task-table";
 import { isDueSoon, isOverdue } from "@/lib/utils/dates";
 
@@ -28,31 +29,26 @@ export default async function MemberDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">
-            Welcome, {profile.full_name || profile.email}
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            {open.length} open task{open.length === 1 ? "" : "s"} assigned to
-            you.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/my/tasks"
-            className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-          >
-            All my tasks
-          </Link>
-          <Link
-            href="/my/activity"
-            className="rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-          >
-            My activity
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title={`Welcome, ${profile.full_name || profile.email}`}
+        subtitle={`${open.length} open task${open.length === 1 ? "" : "s"} assigned to you.`}
+        actions={
+          <>
+            <Link
+              href="/my/board"
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              My board
+            </Link>
+            <Link
+              href="/my/tasks"
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              All my tasks
+            </Link>
+          </>
+        }
+      />
 
       {attention.length > 0 ? (
         <section aria-label="Needs attention">

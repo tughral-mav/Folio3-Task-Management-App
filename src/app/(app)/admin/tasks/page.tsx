@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listTasks, listUsers } from "@/server/queries/tasks";
+import { PageHeader } from "@/components/ui/page-header";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { TaskTable } from "@/components/tasks/task-table";
 import {
@@ -58,20 +59,26 @@ export default async function AdminTasksPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">Tasks</h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            {count} task{count === 1 ? "" : "s"} across the team.
-          </p>
-        </div>
-        <Link
-          href="/admin/tasks/new"
-          className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-        >
-          New task
-        </Link>
-      </div>
+      <PageHeader
+        title="Tasks"
+        subtitle={`${count} task${count === 1 ? "" : "s"} across the team.`}
+        actions={
+          <>
+            <Link
+              href="/admin/board"
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              Board view
+            </Link>
+            <Link
+              href="/admin/tasks/new"
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              New task
+            </Link>
+          </>
+        }
+      />
 
       <TaskFilters
         users={users}

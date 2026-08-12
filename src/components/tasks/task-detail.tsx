@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import {
   OverdueBadge,
   PriorityBadge,
   StatusBadge,
 } from "@/components/tasks/badges";
+import { PageHeader } from "@/components/ui/page-header";
 import { ActivityTimeline } from "@/components/tasks/activity-timeline";
 import { UpdatesList } from "@/components/tasks/updates-list";
 import { formatDate, formatDateTime, isOverdue } from "@/lib/utils/dates";
@@ -36,20 +36,18 @@ export function TaskDetailView({
 
   return (
     <div className="space-y-8">
-      <div>
-        <Link href={backHref} className="text-sm text-zinc-500 hover:underline">
-          ← {backLabel}
-        </Link>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-zinc-900">{task.title}</h1>
-          {headerAction}
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <StatusBadge status={task.status} />
-          <PriorityBadge priority={task.priority} />
-          {overdue ? <OverdueBadge /> : null}
-        </div>
-      </div>
+      <PageHeader
+        back={{ href: backHref, label: backLabel }}
+        title={task.title}
+        actions={headerAction}
+        subtitle={
+          <span className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={task.status} />
+            <PriorityBadge priority={task.priority} />
+            {overdue ? <OverdueBadge /> : null}
+          </span>
+        }
+      />
 
       <section
         aria-label="Task details"

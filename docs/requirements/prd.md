@@ -11,6 +11,7 @@
 |---|---|---|---|
 | 2026-08-11 | 0.1 | Initial draft — generic task app (projects, Kanban, email/password) | Claude (PM) |
 | 2026-08-11 | 0.2 | Full rewrite against the governing requirements prompt: internal Folio3 app, Google OAuth + @folio3.com only, flat task model, ADMIN/TEAM_MEMBER roles, progress updates, persisted notifications, Supabase RLS. Removed: projects, Kanban, email/password auth. | Claude (Planning Agent) |
+| 2026-08-12 | 0.3 | Stakeholder feedback (post-delivery): (a) Trello-style board UI — status columns with task cards; admin can move a card between columns to change status; member sees a read-only board of their tasks; (b) members can add **multiple** dated progress updates, displayed **grouped by date** to the admin; (c) a single consistent page template/format across all screens. Added Epic 8. All prior security invariants unchanged. | Claude (Planning Agent) |
 
 ## 1. Goals and Background Context
 
@@ -256,15 +257,36 @@ Stories are sharded into `docs/stories/` when they enter development (BMAD). Acc
 - **Story 7.4 — Production deployment.** Vercel project from GitHub, production Supabase config, Google OAuth redirect URLs, env vars; Section 39 checklist executed; deployment verified live; full README per Section 42; VM self-hosting runbook (D5).
   - AC: production URL works with real Folio3 login; Section 45 acceptance checklist reviewed item by item.
 
+### Epic 8 — Trello-Style Board, Dated Progress & Consistent Template (v0.3)
+
+**Goal:** Rework the task surfaces into a Trello-like board experience, make multi-update progress reporting first-class and date-grouped, and unify the page template across the app. All security invariants from Epics 1–7 are unchanged.
+
+New functional requirements (additive; FR-numbering continues):
+
+- **FR37 — Board view.** Tasks are shown on a Trello-style board with a column per active status (To do, In progress, Blocked, Completed) and task cards (title, priority, assignee, due date, overdue flag, latest progress %). Card counts per column.
+- **FR38 — Admin board interaction.** An admin can change a task's status by moving its card between columns (drag-and-drop) **and** via a keyboard-accessible status control on the card (NFR5). The change persists through the same admin-only server path (RLS admin-only; activity + notification fan-out unchanged). No new client authority.
+- **FR39 — Member board.** A member sees a **read-only** board of their own assigned tasks grouped by status; opening a card leads to the task detail where they report progress. (Members still change status only via progress updates — D3 — so the member board is not drag-interactive.)
+- **FR40 — Multiple dated progress updates.** A member can add many progress updates over time to an assigned task (already append-only/immutable). The task detail displays them **grouped by calendar date** (date headers, newest first) for both the member and the admin, so the admin can read the member's progress history by date.
+- **FR41 — Consistent template.** Every page uses one shared layout template: a common `PageHeader` (title, subtitle, actions) and consistent content/card/column styling, so all screens share structure and format.
+
+Stories:
+
+- **Story 8.1 — Shared template & board primitives.** `PageHeader`; Trello-style `TaskCard`, `BoardColumn`, `Board`; consistent board/card styling. AC: reused by all board/list surfaces; FR41.
+- **Story 8.2 — Admin board.** `/admin/board` with drag-and-drop + status select → `moveTaskStatusAction` (admin-only). AC: FR37/FR38; moving a card changes status, records activity, notifies; RLS still blocks non-admins.
+- **Story 8.3 — Member board.** `/my/board` read-only columns of own tasks; card → detail. AC: FR39; no status mutation from the member board; RLS-scoped.
+- **Story 8.4 — Dated progress history.** Group `task_updates` by date on the shared task detail; member can add multiple. AC: FR40; admin sees all of a member's updates by date; updates remain immutable.
+- **Story 8.5 — Template rollout.** Apply `PageHeader`/shared template to every page; add Board to nav. AC: FR41; visual/structural consistency.
+- **Story 8.6 — Playwright coverage.** E2E for board rendering, admin status-move, member read-only board, member adding multiple updates + admin viewing the dated history. AC: green in CI.
+
 ## 10. Traceability
 
-- Governing prompt Sections 1–30 → FR1–FR36 / NFR1–NFR12 above.
-- The 13 mandated E2E tests → Epic 2 (Tests 1–5), Epic 3 (Tests 6, 8), Epic 4 (Test 7), Epic 5 (Tests 8–9), Epic 7 (Tests 3, 10–12), Epic 6 (Test 13).
+- Governing prompt Sections 1–30 → FR1–FR36 / NFR1–NFR12 above; v0.3 feedback → FR37–FR41 / Epic 8.
+- The 13 mandated E2E tests → Epic 2 (Tests 1–5), Epic 3 (Tests 6, 8), Epic 4 (Test 7), Epic 5 (Tests 8–9), Epic 7 (Tests 3, 10–12), Epic 6 (Test 13); Epic 8 adds board + dated-progress E2E.
 - Section 45 final acceptance checklist → verified at Story 7.4.
 
-## 11. Out of Scope (Phase 1)
+## 11. Out of Scope
 
-Role-management UI (explicitly deferred), projects/workspaces, Kanban board, comments distinct from progress updates, email/push notifications, file attachments, time tracking, reporting/exports, directory sync (A2), user deactivation UI (A5), PWA, localization.
+Role-management UI (explicitly deferred), projects/workspaces, comments distinct from progress updates, email/push notifications, file attachments, time tracking, reporting/exports, directory sync (A2), user deactivation UI (A5), PWA, localization. (The Trello-style **board** is now IN scope as of v0.3; "Kanban" was previously out of scope under v0.2.)
 
 ## 12. Related Documents
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { createTaskAction } from "@/server/actions/tasks";
 import { listUsers } from "@/server/queries/tasks";
+import { PageHeader } from "@/components/ui/page-header";
 import { TaskForm } from "@/components/tasks/task-form";
 
 export const metadata: Metadata = { title: "New task" };
@@ -13,17 +13,11 @@ export default async function NewTaskPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href="/admin/tasks" className="text-sm text-zinc-500 hover:underline">
-          ← Tasks
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-zinc-900">
-          Create a task
-        </h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          The assignee is notified as soon as the task is saved.
-        </p>
-      </div>
+      <PageHeader
+        back={{ href: "/admin/tasks", label: "Tasks" }}
+        title="Create a task"
+        subtitle="The assignee is notified as soon as the task is saved."
+      />
       <TaskForm
         action={createTaskAction}
         users={users}

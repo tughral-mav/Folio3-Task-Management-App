@@ -8,7 +8,8 @@ import {
   taskCreateSchema,
   taskEditSchema,
 } from "@/lib/validation/tasks";
-import { failure, mapDbError, type ActionResult } from "@/lib/utils/errors";
+import { failure, mapDbError, success, type ActionResult } from "@/lib/utils/errors";
+import { TASK_STATUSES, type TaskStatus } from "@/lib/types/domain";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
@@ -95,4 +96,41 @@ export async function updateTaskAction(
   revalidatePath("/admin/tasks");
   revalidatePath(`/admin/tasks/${taskId}`);
   redirect(`/admin/tasks/${taskId}`);
+}
+
+/**
+ * FR38: admin moves a task between board columns — a status-only change.
+ * Same authority as any admin task update: requireAdmin at execution +
+ * admin-only RLS on the write; the DB triggers record activity and notify.
+ */
+export async function moveTaskStatusAction(
+  taskId: string,
+  status: string,
+): Promise<ActionResult<{ status: TaskStatus }>> {
+  await requireAdmin();
+
+  if (!TASK_STATUSES.includes(status as TaskStatus)) {
+    return failure("That is not a valid status.");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({ status: status as TaskStatus })
+    .eq("id", taskId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    return mapDbError(
+      "moveTaskStatus",
+      error,
+      "Unable to move the task right now. Please try again.",
+    );
+  }
+
+  revalidatePath("/admin/board");
+  revalidatePath("/admin/tasks");
+  revalidatePath(`/admin/tasks/${taskId}`);
+  return success({ status: status as TaskStatus });
 }

@@ -39,6 +39,26 @@ export function formatDateTime(value: string | Date): string {
   });
 }
 
+/** Local calendar-day key (YYYY-MM-DD) for grouping (FR40). */
+export function dayKey(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** Time-of-day only, for entries already grouped under a date header. */
+export function formatTime(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 /** Due within the next `hours` (and not overdue/closed) — "needs attention" (FR35). */
 export function isDueSoon(
   dueDate: string | Date,
