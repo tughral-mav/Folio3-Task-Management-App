@@ -33,6 +33,7 @@ Two roles, `ADMIN` and `TEAM_MEMBER` (default). Role lives only in the DB and is
 - Member: own-tasks list with filters, task detail, immutable progress updates (text + optional %/status), needs-attention dashboard, activity history.
 - Notifications: DB-persisted, live unread badge (Realtime), notification center with open→navigate→mark-read and mark-all-read.
 - Responsive (table→cards on mobile), accessible (semantic HTML, keyboard nav, focus states, status never color-only), loading/error/empty states throughout.
+- **Trello-style board (v0.3):** status columns with task cards; admin moves cards (drag-and-drop or accessible status menu) to change status; member sees a read-only board of their tasks. Progress updates grouped by date so admins read a member's history day by day. One consistent page template across all screens.
 
 ## Tests executed (actually run — results below)
 
@@ -40,7 +41,7 @@ Two roles, `ADMIN` and `TEAM_MEMBER` (default). Role lives only in the DB and is
 |---|---|
 | Unit (Vitest) — domain gate, overdue, validation, search sanitizer | 16/16 pass |
 | RLS / authorization (pg, real Postgres in CI) — IDOR, privilege escalation, admin-only, immutability, RPC rules | 23/23 pass (CI `schema` job) |
-| E2E (Playwright, desktop + Pixel 7, session injection) | 28/28 pass (CI `e2e` job) |
+| E2E (Playwright, desktop + Pixel 7, session injection) | 36/36 pass (CI `e2e` job) — incl. board + dated-progress (v0.3) |
 | Schema verification (migrations + seed + negative domain-gate test) | pass (CI) |
 | Production build / typecheck / lint | pass (CI + Vercel) |
 | Manual OAuth (real Google) — Tests 1,2,3,4,5 + cross-account 6,7,8 | pass (recorded; DB verified clean after Gmail rejection) |
