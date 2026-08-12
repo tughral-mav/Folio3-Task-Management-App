@@ -1,7 +1,7 @@
 import { TaskCard } from "@/components/board/task-card";
 import { STATUS_LABELS } from "@/components/tasks/badges";
 import type { TaskStatus } from "@/lib/types/domain";
-import type { TaskListItem } from "@/server/queries/tasks";
+import type { BoardTask } from "@/server/queries/tasks";
 
 // FR37: the active columns shown on a board (CANCELLED is intentionally not a
 // board column — cancelled work lives in the list view).
@@ -13,58 +13,75 @@ export const BOARD_COLUMNS: TaskStatus[] = [
 ];
 
 const COLUMN_ACCENT: Record<string, string> = {
-  TODO: "before:bg-zinc-400",
-  IN_PROGRESS: "before:bg-blue-500",
-  BLOCKED: "before:bg-amber-500",
-  COMPLETED: "before:bg-emerald-500",
+  TODO: "bg-zinc-400",
+  IN_PROGRESS: "bg-blue-500",
+  BLOCKED: "bg-amber-500",
+  COMPLETED: "bg-emerald-500",
 };
 
 export function groupByStatus(
-  tasks: TaskListItem[],
-): Record<TaskStatus, TaskListItem[]> {
+  tasks: BoardTask[],
+): Record<TaskStatus, BoardTask[]> {
   const groups = {
     TODO: [],
     IN_PROGRESS: [],
     BLOCKED: [],
     COMPLETED: [],
     CANCELLED: [],
-  } as Record<TaskStatus, TaskListItem[]>;
+  } as Record<TaskStatus, BoardTask[]>;
   for (const t of tasks) groups[t.status].push(t);
   return groups;
 }
 
+/** Shared Trello list column header (title + count + accent). */
+export function ColumnHeader({
+  status,
+  count,
+}: {
+  status: TaskStatus;
+  count: number;
+}) {
+  return (
+    <h2 className="mb-2 flex items-center justify-between px-1 py-1 text-sm font-semibold text-[#172b4d]">
+      <span className="flex items-center gap-2">
+        <span
+          aria-hidden="true"
+          className={`h-2.5 w-2.5 rounded-full ${COLUMN_ACCENT[status]}`}
+        />
+        {STATUS_LABELS[status]}
+      </span>
+      <span className="rounded bg-black/10 px-1.5 text-xs font-medium text-[#172b4d]/70">
+        {count}
+      </span>
+    </h2>
+  );
+}
+
 /**
- * FR37/FR39: read-only Trello-style board (used for the member board and as
- * the visual base). The admin board is a separate interactive client wrapper.
+ * FR37/FR39: read-only Trello-style board (member board + visual base). The
+ * admin board is a separate interactive client wrapper.
  */
 export function Board({
   tasks,
   hrefBase,
 }: {
-  tasks: TaskListItem[];
+  tasks: BoardTask[];
   hrefBase: string;
 }) {
   const groups = groupByStatus(tasks);
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
+    <div className="flex items-start gap-3 overflow-x-auto pb-4">
       {BOARD_COLUMNS.map((status) => (
         <section
           key={status}
           aria-label={STATUS_LABELS[status]}
-          className="flex w-72 shrink-0 flex-col rounded-xl bg-zinc-100/80 p-3"
+          className="trello-list flex w-72 shrink-0 flex-col rounded-xl p-2 shadow-sm"
         >
-          <h2
-            className={`relative mb-3 flex items-center justify-between pl-3 text-sm font-semibold text-zinc-700 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-1 before:-translate-y-1/2 before:rounded-full ${COLUMN_ACCENT[status]}`}
-          >
-            {STATUS_LABELS[status]}
-            <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-zinc-500">
-              {groups[status].length}
-            </span>
-          </h2>
+          <ColumnHeader status={status} count={groups[status].length} />
           <div className="flex flex-col gap-2">
             {groups[status].length === 0 ? (
-              <p className="rounded-lg border border-dashed border-zinc-300 p-3 text-center text-xs text-zinc-400">
-                No tasks
+              <p className="rounded-lg px-2 py-3 text-center text-xs text-zinc-400">
+                No cards
               </p>
             ) : (
               groups[status].map((task) => (

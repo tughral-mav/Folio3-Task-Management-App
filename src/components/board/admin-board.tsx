@@ -1,39 +1,54 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { moveTaskStatusAction } from "@/server/actions/tasks";
-import { BOARD_COLUMNS, groupByStatus } from "@/components/board/board";
 import {
-  OverdueBadge,
-  PriorityBadge,
-  STATUS_LABELS,
-} from "@/components/tasks/badges";
-import { formatDate, isOverdue } from "@/lib/utils/dates";
+  moveTaskStatusAction,
+  quickCreateTaskAction,
+  type TaskFormState,
+} from "@/server/actions/tasks";
+import {
+  BOARD_COLUMNS,
+  ColumnHeader,
+  groupByStatus,
+} from "@/components/board/board";
+import {
+  AssigneeChip,
+  CardBadges,
+  PriorityLabel,
+} from "@/components/board/card-parts";
+import { STATUS_LABELS } from "@/components/tasks/badges";
 import type { TaskStatus } from "@/lib/types/domain";
-import type { TaskListItem } from "@/server/queries/tasks";
-
-const COLUMN_ACCENT: Record<string, string> = {
-  TODO: "before:bg-zinc-400",
-  IN_PROGRESS: "before:bg-blue-500",
-  BLOCKED: "before:bg-amber-500",
-  COMPLETED: "before:bg-emerald-500",
-};
+import type { BoardTask, UserRef } from "@/server/queries/tasks";
 
 /**
  * FR38: interactive admin board. Cards move between columns by drag-and-drop
- * or by the per-card status <select> (keyboard-accessible — NFR5). Both call
- * the admin-only moveTaskStatusAction; the UI updates optimistically and
- * reverts on failure. RLS still enforces admin-only on the server.
+ * or the per-card status <select> (keyboard-accessible — NFR5); a Trello-style
+ * inline composer adds a card straight into a column. All writes go through
+ * admin-only server actions; RLS re-enforces admin-only.
  */
-export function AdminBoard({ tasks }: { tasks: TaskListItem[] }) {
+export function AdminBoard({
+  tasks,
+  users,
+}: {
+  tasks: BoardTask[];
+  users: UserRef[];
+}) {
   const router = useRouter();
   const [items, setItems] = useState(tasks);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropCol, setDropCol] = useState<TaskStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+
+  // Re-sync local state when the server component refreshes with new data
+  // (React's "adjust state during render on prop change" pattern).
+  const [seenTasks, setSeenTasks] = useState(tasks);
+  if (seenTasks !== tasks) {
+    setSeenTasks(tasks);
+    setItems(tasks);
+  }
 
   const groups = groupByStatus(items);
 
@@ -50,7 +65,7 @@ export function AdminBoard({ tasks }: { tasks: TaskListItem[] }) {
     startTransition(async () => {
       const result = await moveTaskStatusAction(taskId, status);
       if (!result.ok) {
-        setItems(previous); // revert
+        setItems(previous);
         setError(result.error.message);
       } else {
         router.refresh();
@@ -61,11 +76,14 @@ export function AdminBoard({ tasks }: { tasks: TaskListItem[] }) {
   return (
     <div>
       {error ? (
-        <p role="alert" className="mb-3 text-sm text-red-700">
+        <p
+          role="alert"
+          className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
+        >
           {error}
         </p>
       ) : null}
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex items-start gap-3 overflow-x-auto pb-4">
         {BOARD_COLUMNS.map((status) => (
           <section
             key={status}
@@ -80,80 +98,171 @@ export function AdminBoard({ tasks }: { tasks: TaskListItem[] }) {
               setDragId(null);
               setDropCol(null);
             }}
-            className={`flex w-72 shrink-0 flex-col rounded-xl p-3 transition-colors ${
-              dropCol === status ? "bg-blue-100/70" : "bg-zinc-100/80"
+            className={`flex max-h-[calc(100vh-11rem)] w-72 shrink-0 flex-col rounded-xl p-2 shadow-sm transition-colors ${
+              dropCol === status ? "bg-blue-100" : "trello-list"
             }`}
           >
-            <h2
-              className={`relative mb-3 flex items-center justify-between pl-3 text-sm font-semibold text-zinc-700 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-1 before:-translate-y-1/2 before:rounded-full ${COLUMN_ACCENT[status]}`}
-            >
-              {STATUS_LABELS[status]}
-              <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-zinc-500">
-                {groups[status].length}
-              </span>
-            </h2>
+            <ColumnHeader status={status} count={groups[status].length} />
 
-            <div className="flex flex-col gap-2">
-              {groups[status].length === 0 ? (
-                <p className="rounded-lg border border-dashed border-zinc-300 p-3 text-center text-xs text-zinc-400">
-                  No tasks
-                </p>
-              ) : (
-                groups[status].map((task) => {
-                  const overdue = isOverdue(task.due_date, task.status);
-                  return (
-                    <article
-                      key={task.id}
-                      draggable
-                      onDragStart={() => setDragId(task.id)}
-                      onDragEnd={() => setDragId(null)}
-                      className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm transition hover:border-zinc-300 hover:shadow"
+            <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
+              {groups[status].map((task) => (
+                <article
+                  key={task.id}
+                  draggable
+                  onDragStart={() => setDragId(task.id)}
+                  onDragEnd={() => setDragId(null)}
+                  className={`trello-card-shadow cursor-grab rounded-lg bg-white p-2.5 active:cursor-grabbing ${
+                    dragId === task.id ? "opacity-50" : ""
+                  }`}
+                >
+                  <PriorityLabel priority={task.priority} />
+                  <Link
+                    href={`/admin/tasks/${task.id}`}
+                    className="mt-1.5 block text-sm font-medium text-[#172b4d] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  >
+                    {task.title}
+                  </Link>
+                  <div className="mt-2 flex items-end justify-between gap-2">
+                    <CardBadges
+                      dueDate={task.due_date}
+                      status={task.status}
+                      hasDescription={Boolean(task.description?.trim())}
+                      updateCount={task.updateCount}
+                    />
+                    <AssigneeChip user={task.assignee} />
+                  </div>
+                  <label className="mt-2 block">
+                    <span className="sr-only">Move “{task.title}” to status</span>
+                    <select
+                      aria-label={`Status of ${task.title}`}
+                      value={task.status}
+                      onChange={(e) =>
+                        move(task.id, e.target.value as TaskStatus)
+                      }
+                      className="w-full rounded border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
                     >
-                      <Link
-                        href={`/admin/tasks/${task.id}`}
-                        className="block text-sm font-medium text-zinc-900 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                      >
-                        {task.title}
-                      </Link>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <PriorityBadge priority={task.priority} />
-                        {overdue ? <OverdueBadge /> : null}
-                      </div>
-                      <div className="mt-2 flex items-center justify-between gap-2 text-xs text-zinc-500">
-                        <span className="truncate">
-                          {task.assignee.full_name || task.assignee.email}
-                        </span>
-                        <span className="whitespace-nowrap">
-                          {formatDate(task.due_date)}
-                        </span>
-                      </div>
-                      <label className="mt-2 block">
-                        <span className="sr-only">
-                          Move “{task.title}” to status
-                        </span>
-                        <select
-                          aria-label={`Status of ${task.title}`}
-                          value={task.status}
-                          onChange={(e) =>
-                            move(task.id, e.target.value as TaskStatus)
-                          }
-                          className="w-full rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
-                        >
-                          {BOARD_COLUMNS.map((s) => (
-                            <option key={s} value={s}>
-                              {STATUS_LABELS[s]}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    </article>
-                  );
-                })
-              )}
+                      {BOARD_COLUMNS.map((s) => (
+                        <option key={s} value={s}>
+                          {STATUS_LABELS[s]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </article>
+              ))}
             </div>
+
+            <AddCardComposer status={status} users={users} />
           </section>
         ))}
       </div>
     </div>
+  );
+}
+
+/** Trello-style inline "Add a card" composer for one column. */
+function AddCardComposer({
+  status,
+  users,
+}: {
+  status: TaskStatus;
+  users: UserRef[];
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const action = quickCreateTaskAction.bind(null, status);
+  const [state, formAction, pending] = useActionState<TaskFormState, FormData>(
+    action,
+    null,
+  );
+
+  useEffect(() => {
+    if (state?.ok) router.refresh();
+  }, [state, router]);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 flex items-center gap-1 rounded-md px-2 py-1.5 text-left text-sm text-[#172b4d]/70 transition hover:bg-black/10 hover:text-[#172b4d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      >
+        <span aria-hidden="true">＋</span> Add a card
+      </button>
+    );
+  }
+
+  return (
+    <form
+      action={formAction}
+      className="mt-2 rounded-lg bg-white p-2 shadow-sm"
+      // Re-open composer after a successful add so several can be added.
+      key={state?.ok ? "reset" : "editing"}
+    >
+      <label className="sr-only" htmlFor={`add-title-${status}`}>
+        Card title
+      </label>
+      <textarea
+        id={`add-title-${status}`}
+        name="title"
+        rows={2}
+        required
+        autoFocus
+        placeholder="Enter a title for this card…"
+        className="w-full resize-none rounded border border-zinc-200 px-2 py-1.5 text-sm text-[#172b4d] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
+      />
+      <div className="mt-2 grid grid-cols-1 gap-2">
+        <label className="sr-only" htmlFor={`add-assignee-${status}`}>
+          Assignee
+        </label>
+        <select
+          id={`add-assignee-${status}`}
+          name="assigned_to"
+          required
+          defaultValue=""
+          className="w-full rounded border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
+        >
+          <option value="" disabled>
+            Assignee…
+          </option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.full_name || u.email}
+            </option>
+          ))}
+        </select>
+        <label className="sr-only" htmlFor={`add-due-${status}`}>
+          Due date
+        </label>
+        <input
+          id={`add-due-${status}`}
+          name="due_date"
+          type="date"
+          required
+          className="w-full rounded border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
+        />
+      </div>
+      {state && !state.ok ? (
+        <p role="alert" className="mt-1 text-xs text-red-700">
+          {state.error.message}
+        </p>
+      ) : null}
+      <div className="mt-2 flex items-center gap-2">
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60"
+        >
+          {pending ? "Adding…" : "Add card"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="rounded px-2 py-1.5 text-sm text-zinc-500 transition hover:text-zinc-800"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

@@ -1,35 +1,32 @@
 import Link from "next/link";
-import { OverdueBadge, PriorityBadge } from "@/components/tasks/badges";
-import { formatDate, isOverdue } from "@/lib/utils/dates";
-import type { TaskListItem } from "@/server/queries/tasks";
+import {
+  AssigneeChip,
+  CardBadges,
+  PriorityLabel,
+} from "@/components/board/card-parts";
+import type { BoardTask } from "@/server/queries/tasks";
 
 /**
- * FR37: a Trello-style task card. Presentational only — the interactive admin
- * board wraps this with drag handlers and a status control.
+ * FR37: a Trello-style task card — white, rounded, subtle shadow, with a
+ * colored priority label, the title, a badge row (due / description /
+ * updates), and the assignee avatar.
  */
-export function TaskCard({
-  task,
-  href,
-}: {
-  task: TaskListItem;
-  href: string;
-}) {
-  const overdue = isOverdue(task.due_date, task.status);
+export function TaskCard({ task, href }: { task: BoardTask; href: string }) {
   return (
     <Link
       href={href}
-      className="block rounded-lg border border-zinc-200 bg-white p-3 shadow-sm transition hover:border-zinc-300 hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      className="trello-card-shadow block rounded-lg bg-white p-2.5 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
     >
-      <p className="text-sm font-medium text-zinc-900">{task.title}</p>
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        <PriorityBadge priority={task.priority} />
-        {overdue ? <OverdueBadge /> : null}
-      </div>
-      <div className="mt-2 flex items-center justify-between gap-2 text-xs text-zinc-500">
-        <span className="truncate">
-          {task.assignee.full_name || task.assignee.email}
-        </span>
-        <span className="whitespace-nowrap">Due {formatDate(task.due_date)}</span>
+      <PriorityLabel priority={task.priority} />
+      <p className="mt-1.5 text-sm font-medium text-[#172b4d]">{task.title}</p>
+      <div className="mt-2 flex items-end justify-between gap-2">
+        <CardBadges
+          dueDate={task.due_date}
+          status={task.status}
+          hasDescription={Boolean(task.description?.trim())}
+          updateCount={task.updateCount}
+        />
+        <AssigneeChip user={task.assignee} />
       </div>
     </Link>
   );

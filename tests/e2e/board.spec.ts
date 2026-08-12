@@ -41,6 +41,20 @@ test.describe("admin board", () => {
       "IN_PROGRESS",
     );
   });
+
+  test("admin adds a card via the inline composer (Trello quick-add)", async ({
+    page,
+  }) => {
+    const title = `Quick card ${Date.now()}`;
+    await page.goto("/admin/board");
+    const todo = page.getByRole("region", { name: "To do" });
+    await todo.getByRole("button", { name: /add a card/i }).click();
+    await page.getByPlaceholder(/enter a title for this card/i).fill(title);
+    await page.getByLabel("Assignee").selectOption({ label: "Seed Member A" });
+    await page.getByLabel("Due date").fill("2026-12-31");
+    await page.getByRole("button", { name: /^add card$/i }).click();
+    await expect(todo.getByText(title)).toBeVisible();
+  });
 });
 
 test.describe("member board", () => {

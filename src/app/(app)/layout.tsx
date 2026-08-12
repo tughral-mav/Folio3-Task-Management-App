@@ -38,17 +38,23 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       >
         Skip to content
       </a>
-      <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white">
+      <header className="sticky top-0 z-20 bg-[#172b4d] text-white shadow-sm">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4">
           <Link
             href={home}
-            className="text-sm font-semibold tracking-tight text-zinc-900"
+            className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white"
           >
-            Folio3 <span className="text-blue-600">Task Manager</span>
+            <span
+              aria-hidden="true"
+              className="grid h-6 w-6 place-items-center rounded bg-white/20 text-xs"
+            >
+              ▦
+            </span>
+            Folio3 <span className="text-white/70">Tasks</span>
           </Link>
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <span className="hidden text-sm text-zinc-600 sm:inline">
+            <span className="hidden text-sm text-white/80 sm:inline">
               {profile.full_name || profile.email}
             </span>
             {profile.avatar_url ? (
@@ -56,12 +62,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               <img
                 src={profile.avatar_url}
                 alt=""
-                className="h-8 w-8 rounded-full border border-zinc-200"
+                className="h-8 w-8 rounded-full border border-white/30"
               />
             ) : (
               <span
                 aria-hidden="true"
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-700"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-medium text-white"
               >
                 {(profile.full_name || profile.email).charAt(0).toUpperCase()}
               </span>
@@ -69,7 +75,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             <form action={signOutAction}>
               <button
                 type="submit"
-                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                className="rounded-md border border-white/30 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 Sign out
               </button>
@@ -78,14 +84,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </div>
         <nav
           aria-label="Primary"
-          className="mx-auto w-full max-w-6xl overflow-x-auto px-4"
+          className="border-t border-white/10 bg-black/10"
         >
-          <ul className="flex gap-1 pb-2 text-sm">
+          <ul className="mx-auto flex w-full max-w-6xl gap-1 overflow-x-auto px-3 py-1.5 text-sm">
             {nav.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="inline-block rounded-lg px-3 py-1.5 font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  className="inline-block rounded-md px-3 py-1.5 font-medium text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
                   {item.label}
                 </Link>

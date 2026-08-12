@@ -18,7 +18,7 @@ export async function NotificationBell() {
           ? "Notifications"
           : `Notifications, ${count} unread`
       }
-      className="relative flex h-9 w-9 items-center justify-center rounded-full text-lg transition hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      className="relative flex h-9 w-9 items-center justify-center rounded-full text-lg transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
     >
       <span aria-hidden="true">🔔</span>
       {count > 0 ? (

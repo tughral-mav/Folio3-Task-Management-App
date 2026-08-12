@@ -99,6 +99,53 @@ export async function updateTaskAction(
 }
 
 /**
+ * Trello-style inline "Add a card": admin quick-creates a task directly in a
+ * board column (status). Same authority/validation as createTaskAction, but
+ * returns a result instead of redirecting so the composer can stay open.
+ */
+export async function quickCreateTaskAction(
+  status: string,
+  _prev: TaskFormState,
+  formData: FormData,
+): Promise<TaskFormState> {
+  const { user } = await requireAdmin();
+
+  if (!TASK_STATUSES.includes(status as TaskStatus)) {
+    return failure("That is not a valid column.");
+  }
+
+  const parsed = taskCreateSchema.safeParse({
+    title: String(formData.get("title") ?? ""),
+    description: "",
+    assigned_to: String(formData.get("assigned_to") ?? ""),
+    priority: String(formData.get("priority") ?? "MEDIUM"),
+    due_date: String(formData.get("due_date") ?? ""),
+  });
+  if (!parsed.success) {
+    return failure("Please fix the highlighted fields.", fieldErrors(parsed.error));
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert({ ...parsed.data, created_by: user.id, status: status as TaskStatus })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    return mapDbError(
+      "quickCreateTask",
+      error,
+      "Unable to add the card right now. Please try again.",
+    );
+  }
+
+  revalidatePath("/admin/board");
+  revalidatePath("/admin/tasks");
+  return success({ taskId: data.id });
+}
+
+/**
  * FR38: admin moves a task between board columns — a status-only change.
  * Same authority as any admin task update: requireAdmin at execution +
  * admin-only RLS on the write; the DB triggers record activity and notify.

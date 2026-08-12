@@ -122,16 +122,20 @@ export async function listOpenTasks(limit = 200): Promise<TaskListItem[]> {
   return (data ?? []) as TaskListItem[];
 }
 
+/** A board card carries a Trello-style badge count of its progress updates. */
+export type BoardTask = TaskListItem & { updateCount: number };
+
 /**
  * FR37: tasks for a board view — all non-cancelled tasks the caller may see
  * (admin: all; member: own, via RLS), across every board column. Bounded at
- * `limit` (documented) rather than the 25-row list page.
+ * `limit` (documented) rather than the 25-row list page. Includes the
+ * task_updates count for the card "comments" badge (Trello UX).
  */
-export async function listBoardTasks(limit = 200): Promise<TaskListItem[]> {
+export async function listBoardTasks(limit = 200): Promise<BoardTask[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("tasks")
-    .select(TASK_WITH_USERS)
+    .select(`${TASK_WITH_USERS}, updates:task_updates(count)`)
     .neq("status", "CANCELLED")
     .order("updated_at", { ascending: false })
     .limit(limit);
@@ -139,7 +143,12 @@ export async function listBoardTasks(limit = 200): Promise<TaskListItem[]> {
     console.error("[listBoardTasks]", error.code, error.message);
     return [];
   }
-  return (data ?? []) as TaskListItem[];
+  return ((data ?? []) as (TaskListItem & { updates: { count: number }[] })[]).map(
+    ({ updates, ...task }) => ({
+      ...task,
+      updateCount: updates?.[0]?.count ?? 0,
+    }),
+  );
 }
 
 export async function getTaskDetail(id: string): Promise<TaskDetail | null> {
