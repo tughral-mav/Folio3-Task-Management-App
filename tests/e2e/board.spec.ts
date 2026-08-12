@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { ADMIN_STATE, MEMBER_STATE } from "./helpers";
+import {
+  ADMIN_STATE,
+  MEMBER_STATE,
+  expectNoHorizontalOverflow,
+} from "./helpers";
 
 // Epic 8 (FR37–FR39): Trello-style board.
 test.describe("admin board", () => {
@@ -13,6 +17,13 @@ test.describe("admin board", () => {
         page.getByRole("region", { name: col }).first(),
       ).toBeVisible();
     }
+  });
+
+  test("board page has no horizontal overflow (NFR1/Test 13)", async ({
+    page,
+  }) => {
+    await page.goto("/admin/board");
+    await expectNoHorizontalOverflow(page);
   });
 
   test("admin moves a task to a new status via the card control (FR38)", async ({
@@ -78,5 +89,12 @@ test.describe("member board", () => {
     await expect(page.getByText("Prepare Q3 report").first()).toBeVisible();
     // No status <select> exists on the member board.
     await expect(page.locator("select")).toHaveCount(0);
+  });
+
+  test("member board has no horizontal overflow (NFR1/Test 13)", async ({
+    page,
+  }) => {
+    await page.goto("/my/board");
+    await expectNoHorizontalOverflow(page);
   });
 });

@@ -30,7 +30,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         ];
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-zinc-50">
+    <div className="flex min-h-full flex-1 flex-col overflow-x-clip bg-zinc-50">
       {/* NFR5: keyboard users can bypass the header */}
       <a
         href="#main"
