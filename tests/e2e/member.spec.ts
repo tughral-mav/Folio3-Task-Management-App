@@ -18,6 +18,19 @@ test("member sees their own assigned tasks, not others' (FR14)", async ({
   await expect(page.getByText("Update onboarding docs")).toHaveCount(0);
 });
 
+test("member can create and assign a task (FR42, v0.4)", async ({ page }) => {
+  const title = `Member task ${Date.now()}`;
+  await page.goto("/my/tasks/new");
+  await page.getByLabel("Title").fill(title);
+  await page.getByLabel("Assignee").selectOption({ label: "Seed Member B" });
+  await page.getByLabel("Priority").selectOption("MEDIUM");
+  await page.getByLabel("Due date").fill("2026-12-31");
+  await page.getByRole("button", { name: /create task/i }).click();
+  // Redirects to the member task detail; creator sees the observer notice.
+  await expect(page.getByRole("heading", { name: title })).toBeVisible();
+  await expect(page.getByText(/you created this task/i)).toBeVisible();
+});
+
 test("member submits a progress update (Test 7)", async ({ page }, testInfo) => {
   // Unique per run: progress updates are immutable and accumulate, so
   // identical text across projects/retries would match multiple rows.

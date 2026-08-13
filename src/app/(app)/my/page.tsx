@@ -35,16 +35,16 @@ export default async function MemberDashboardPage() {
         actions={
           <>
             <Link
-              href="/my/board"
+              href="/my/tasks/new"
               className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
-              My board
+              New task
             </Link>
             <Link
-              href="/my/tasks"
+              href="/my/board"
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
-              All my tasks
+              My board
             </Link>
           </>
         }

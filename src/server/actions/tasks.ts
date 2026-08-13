@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/auth/session";
+import { requireAdmin, requireUser } from "@/lib/auth/session";
 import {
   fieldErrors,
   taskCreateSchema,
@@ -13,11 +13,13 @@ import { TASK_STATUSES, type TaskStatus } from "@/lib/types/domain";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
- * Admin-only task mutations (FR10, FR13). Defense in depth (SEC-7):
- * requireAdmin() at execution time, THEN the write runs with the caller's
- * session so RLS re-checks admin + created_by pinning. Activity and
- * notifications fan out atomically via DB triggers (ADR-4) — nothing to
- * orchestrate here.
+ * Task mutations. Defense in depth (SEC-7): guard at execution time, THEN the
+ * write runs with the caller's session so RLS re-checks the rule. Activity and
+ * notifications fan out atomically via DB triggers (ADR-4).
+ *
+ * v0.4/FR42: creation (createTaskAction) is open to any provisioned user with
+ * created_by pinned to self. Edit/reassign/set-any-status (updateTaskAction,
+ * moveTaskStatusAction) remain admin-only.
  */
 
 export type TaskFormState = ActionResult<{ taskId: string }> | null;
@@ -36,7 +38,9 @@ export async function createTaskAction(
   _prev: TaskFormState,
   formData: FormData,
 ): Promise<TaskFormState> {
-  const { user } = await requireAdmin();
+  // FR42: any provisioned user may create + assign. RLS re-checks
+  // (is_provisioned + created_by = self) underneath.
+  const { user, profile } = await requireUser();
 
   const parsed = taskCreateSchema.safeParse(formValues(formData));
   if (!parsed.success) {
@@ -59,7 +63,12 @@ export async function createTaskAction(
   }
 
   revalidatePath("/admin/tasks");
-  redirect(`/admin/tasks/${data.id}`);
+  revalidatePath("/my/tasks");
+  redirect(
+    profile.role === "ADMIN"
+      ? `/admin/tasks/${data.id}`
+      : `/my/tasks/${data.id}`,
+  );
 }
 
 export async function updateTaskAction(

@@ -18,6 +18,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           { href: "/admin", label: "Dashboard" },
           { href: "/admin/board", label: "Board" },
           { href: "/admin/tasks", label: "Tasks" },
+          { href: "/admin/insights", label: "Insights" },
           { href: "/admin/team", label: "Team" },
           { href: "/notifications", label: "Notifications" },
         ]
@@ -25,6 +26,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           { href: "/my", label: "Dashboard" },
           { href: "/my/board", label: "Board" },
           { href: "/my/tasks", label: "My Tasks" },
+          { href: "/my/tasks/new", label: "New task" },
           { href: "/my/activity", label: "Activity" },
           { href: "/notifications", label: "Notifications" },
         ];

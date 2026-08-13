@@ -117,18 +117,43 @@ describe("tasks visibility (FR14 / Test 10 IDOR)", () => {
   });
 });
 
-describe("tasks mutation (Test 12 admin-only)", () => {
-  it("member cannot insert a task", async () => {
+describe("tasks mutation (create open v0.4; edit admin-only)", () => {
+  it("member CAN create a task with created_by = self (FR42)", async () => {
+    await asUser(client, MEMBER_A, async (q) => {
+      const rows = await q(
+        `insert into public.tasks (title, created_by, assigned_to, due_date)
+         values ('member made', $1, $2, now()) returning id`,
+        [MEMBER_A, MEMBER_B],
+      );
+      expect(rows).toHaveLength(1);
+    });
+  });
+
+  it("member cannot spoof created_by to someone else", async () => {
     const blocked = await asUser(client, MEMBER_A, (q) =>
       rejects(
         q(
           `insert into public.tasks (title, created_by, assigned_to, due_date)
-           values ('sneaky', $1, $1, now())`,
-          [MEMBER_A],
+           values ('spoof', $1, $1, now())`,
+          [MEMBER_B],
         ),
       ),
     );
     expect(blocked).toBe(true);
+  });
+
+  it("creator can read a task they created but aren't assigned (FR43)", async () => {
+    await asUser(client, MEMBER_A, async (q) => {
+      const ins = (await q(
+        `insert into public.tasks (title, created_by, assigned_to, due_date)
+         values ('mine to track', $1, $2, now()) returning id`,
+        [MEMBER_A, MEMBER_B],
+      )) as { id: string }[];
+      const rows = await q("select id from public.tasks where id = $1", [
+        ins[0].id,
+      ]);
+      expect(rows).toHaveLength(1);
+    });
   });
 
   it("member cannot directly update a task they are assigned (status bypass)", async () => {

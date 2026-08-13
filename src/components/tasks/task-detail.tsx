@@ -121,17 +121,31 @@ export function TaskDetailView({
 
       {beforeUpdates}
 
+      {/* FR44: complete progress history, latest update first. */}
       <section aria-label="Progress updates">
-        <h2 className="text-lg font-semibold text-zinc-900">
-          Progress updates
-        </h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-semibold text-zinc-900">
+            Progress updates
+            {task.updates.length > 0 ? (
+              <span className="ml-2 text-sm font-normal text-zinc-500">
+                {task.updates.length} total
+              </span>
+            ) : null}
+          </h2>
+          {task.updates.length > 1 ? (
+            <span className="text-xs text-zinc-500">Latest first</span>
+          ) : null}
+        </div>
         <div className="mt-4">
           <UpdatesList updates={task.updates} />
         </div>
       </section>
 
-      <section aria-label="Activity">
-        <h2 className="text-lg font-semibold text-zinc-900">Activity</h2>
+      {/* FR44: complete activity/audit history, newest first. */}
+      <section aria-label="Activity history">
+        <h2 className="text-lg font-semibold text-zinc-900">
+          Activity history
+        </h2>
         <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
           <ActivityTimeline activity={task.activity} />
         </div>

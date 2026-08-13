@@ -12,6 +12,7 @@
 | 2026-08-11 | 0.1 | Initial draft — generic task app (projects, Kanban, email/password) | Claude (PM) |
 | 2026-08-11 | 0.2 | Full rewrite against the governing requirements prompt: internal Folio3 app, Google OAuth + @folio3.com only, flat task model, ADMIN/TEAM_MEMBER roles, progress updates, persisted notifications, Supabase RLS. Removed: projects, Kanban, email/password auth. | Claude (Planning Agent) |
 | 2026-08-12 | 0.3 | Stakeholder feedback (post-delivery): (a) Trello-style board UI — status columns with task cards; admin can move a card between columns to change status; member sees a read-only board of their tasks; (b) members can add **multiple** dated progress updates, displayed **grouped by date** to the admin; (c) a single consistent page template/format across all screens. Added Epic 8. All prior security invariants unchanged. | Claude (Planning Agent) |
+| 2026-08-13 | 0.4 | Stakeholder feedback (Epic 9): (1) **any provisioned member may create a task and assign it to anyone** — this deliberately **supersedes governing-prompt §6 / Test 12** ("team members must NOT create or assign tasks"). Authorization is still enforced by RLS: task INSERT now allowed for any provisioned user with `created_by` pinned to self; SELECT of a task widened to assignee **or creator** or admin; edit/reassign and status-set-any remain admin-only; role changes still locked; no cross-user data access beyond tasks you're the assignee or creator of. (2) Task detail shows the **complete** progress history with the **latest update at the top**. (3) New **admin daily-activity dashboard**: tasks assigned per day, progress updates per day, and daily update counts. | Claude (Planning Agent) |
 
 ## 1. Goals and Background Context
 
@@ -277,6 +278,17 @@ Stories:
 - **Story 8.4 — Dated progress history.** Group `task_updates` by date on the shared task detail; member can add multiple. AC: FR40; admin sees all of a member's updates by date; updates remain immutable.
 - **Story 8.5 — Template rollout.** Apply `PageHeader`/shared template to every page; add Board to nav. AC: FR41; visual/structural consistency.
 - **Story 8.6 — Playwright coverage.** E2E for board rendering, admin status-move, member read-only board, member adding multiple updates + admin viewing the dated history. AC: green in CI.
+
+### Epic 9 — Open Task Creation, Full History & Admin Insights (v0.4)
+
+**Goal:** let anyone create/assign work, surface the complete task history newest-first, and give admins a daily-activity dashboard. Security is still RLS-enforced; only the *task-creation* boundary is relaxed by explicit stakeholder decision.
+
+- **FR42 — Member task creation.** Any provisioned user (ADMIN or TEAM_MEMBER) can create a task and assign it to **any** user. `created_by` is pinned to the caller by RLS `WITH CHECK` (no spoofing). Editing/reassigning an existing task and setting arbitrary status remain **admin-only**; assignees still change status only via the progress RPC (D3). **This supersedes governing-prompt §6 and Test 12's create/assign restriction** (recorded in the Change Log). Admin-only *surfaces* (admin dashboard, board interactions, insights) remain member-inaccessible.
+- **FR43 — Creator visibility.** A member who creates a task can view that task and its full progress/activity even if they are not the assignee (RLS SELECT widened to `assigned_to = self OR created_by = self OR admin`). A creator who is not the assignee cannot submit progress (the RPC still requires assignee = caller).
+- **FR44 — Complete history, latest first.** The task detail shows the complete progress-update history with the newest update at the top, plus the complete append-only activity timeline (newest first). No truncation.
+- **FR45 — Admin daily-activity dashboard.** An admin-only insights view shows, per day (recent window): tasks assigned (created) that day, progress updates submitted that day, and the daily update counts, with summary totals.
+
+Stories: 9.1 RLS + member create flow (FR42/FR43); 9.2 complete latest-first history (FR44); 9.3 admin insights dashboard + daily-stats query (FR45); 9.4 tests (RLS updated: member CAN insert with self as creator, spoof denied; E2E member-create + insights).
 
 ## 10. Traceability
 

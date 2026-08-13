@@ -16,6 +16,18 @@ test("admin lands on the Admin Dashboard with stat cards", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("admin insights shows daily activity (FR45, v0.4)", async ({ page }) => {
+  await page.goto("/admin/insights");
+  await expect(
+    page.getByRole("heading", { name: /daily activity/i }),
+  ).toBeVisible();
+  await expect(page.getByText(/progress updates per day/i)).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: /tasks assigned/i }),
+  ).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("admin creates and assigns a task (Test 6)", async ({ page }, testInfo) => {
   const title = `E2E ${testInfo.project.name} ${Date.now()}`;
 

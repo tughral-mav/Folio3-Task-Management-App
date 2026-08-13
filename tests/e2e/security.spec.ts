@@ -5,11 +5,13 @@ import { MEMBER_STATE, OTHER_MEMBERS_TASK } from "./helpers";
 // Tests 10 and 12 (the DB layer is covered by the RLS suite).
 test.use({ storageState: MEMBER_STATE });
 
-test("member is bounced from the admin area (Test 12, UI)", async ({ page }) => {
-  await page.goto("/admin");
-  await expect(page).toHaveURL(/\/my$/);
-  await page.goto("/admin/tasks/new");
-  await expect(page).toHaveURL(/\/my$/);
+test("member is bounced from admin-only surfaces (UI)", async ({ page }) => {
+  // Admin dashboard, admin board create, and insights stay admin-only even
+  // though members can now create tasks via their own /my/tasks/new (v0.4).
+  for (const route of ["/admin", "/admin/tasks/new", "/admin/insights"]) {
+    await page.goto(route);
+    await expect(page).toHaveURL(/\/my$/);
+  }
 });
 
 test("member cannot open another user's task (Test 10, UI / IDOR)", async ({
