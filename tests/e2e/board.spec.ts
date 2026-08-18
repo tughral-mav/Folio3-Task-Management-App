@@ -34,7 +34,7 @@ test.describe("admin board", () => {
     const title = `Board move ${Date.now()}`;
     await page.goto("/admin/tasks/new");
     await page.getByLabel("Title").fill(title);
-    await page.getByLabel("Assignee").selectOption({ label: "Seed Member A" });
+    await selectAssignee(page, "Seed Member A");
     await page.getByLabel("Priority").selectOption("MEDIUM");
     await page.getByLabel("Due date").fill("2026-12-31");
     await page.getByRole("button", { name: /create task/i }).click();
