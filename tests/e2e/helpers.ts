@@ -38,6 +38,17 @@ export async function expectNoHorizontalOverflow(page: Page) {
   expect(overflow, "horizontal overflow (px)").toBeLessThanOrEqual(1);
 }
 
+/** Pick a team member in the searchable assignee combobox (filter + click). */
+export async function selectAssignee(page: Page, name: string) {
+  const box = page.getByLabel("Assignee");
+  await box.click();
+  await box.fill(name);
+  await page
+    .getByRole("option", { name: new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })
+    .first()
+    .click();
+}
+
 /** Reads the unread count off the notification bell's accessible label. */
 export async function unreadBadgeCount(page: Page): Promise<number> {
   const bell = page.getByRole("link", { name: /notifications/i }).first();

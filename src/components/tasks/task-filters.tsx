@@ -1,6 +1,7 @@
 import type { UserRef } from "@/server/queries/tasks";
 import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/types/domain";
 import { PRIORITY_LABELS, STATUS_LABELS } from "@/components/tasks/badges";
+import { UserCombobox } from "@/components/tasks/user-combobox";
 
 const FIELD =
   "rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600";
@@ -79,18 +80,18 @@ export function TaskFilters({
       </div>
 
       {users ? (
-        <div>
+        <div className="w-52">
           <label htmlFor="f-assignee" className="block text-xs font-medium text-zinc-600">
             Assignee
           </label>
-          <select id="f-assignee" name="assignee" defaultValue={values.assignee ?? ""} className={`${FIELD} mt-1`}>
-            <option value="">Anyone</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.full_name || u.email}
-              </option>
-            ))}
-          </select>
+          <UserCombobox
+            inputId="f-assignee"
+            name="assignee"
+            users={users}
+            defaultValue={values.assignee}
+            placeholder="Anyone"
+            allowEmpty
+          />
         </div>
       ) : null}
 

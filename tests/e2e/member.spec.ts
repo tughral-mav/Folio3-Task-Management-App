@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import {
   MEMBER_STATE,
+  selectAssignee,
   unreadBadgeCount,
   visibleTask,
   visibleTaskLink,
@@ -22,7 +23,7 @@ test("member can create and assign a task (FR42, v0.4)", async ({ page }) => {
   const title = `Member task ${Date.now()}`;
   await page.goto("/my/tasks/new");
   await page.getByLabel("Title").fill(title);
-  await page.getByLabel("Assignee").selectOption({ label: "Seed Member B" });
+  await selectAssignee(page, "Seed Member B");
   await page.getByLabel("Priority").selectOption("MEDIUM");
   await page.getByLabel("Due date").fill("2026-12-31");
   await page.getByRole("button", { name: /create task/i }).click();

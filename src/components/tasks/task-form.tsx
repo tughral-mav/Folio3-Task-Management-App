@@ -10,6 +10,7 @@ import {
   type TaskStatus,
 } from "@/lib/types/domain";
 import { PRIORITY_LABELS, STATUS_LABELS } from "@/components/tasks/badges";
+import { UserCombobox } from "@/components/tasks/user-combobox";
 
 type TaskFormProps = {
   action: (prev: TaskFormState, formData: FormData) => Promise<TaskFormState>;
@@ -99,22 +100,13 @@ export function TaskForm({
         <label htmlFor="task-assignee" className={LABEL}>
           Assignee
         </label>
-        <select
-          id="task-assignee"
+        <UserCombobox
+          inputId="task-assignee"
           name="assigned_to"
-          required
-          defaultValue={defaults.assigned_to ?? ""}
-          className={FIELD}
-        >
-          <option value="" disabled>
-            Choose a team member…
-          </option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.full_name || u.email}
-            </option>
-          ))}
-        </select>
+          users={users}
+          defaultValue={defaults.assigned_to}
+          placeholder="Search team members…"
+        />
         <FieldError message={errors.assigned_to} />
         {users.length === 0 ? (
           <p className="mt-1 text-sm text-zinc-500">

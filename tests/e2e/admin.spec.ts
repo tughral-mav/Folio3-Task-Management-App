@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import {
   ADMIN_STATE,
   expectNoHorizontalOverflow,
+  selectAssignee,
   visibleTask,
 } from "./helpers";
 
@@ -34,7 +35,7 @@ test("admin creates and assigns a task (Test 6)", async ({ page }, testInfo) => 
   await page.goto("/admin/tasks/new");
   await page.getByLabel("Title").fill(title);
   await page.getByLabel("Description").fill("Created by the Playwright suite.");
-  await page.getByLabel("Assignee").selectOption({ label: "Seed Member A" });
+  await selectAssignee(page, "Seed Member A");
   await page.getByLabel("Priority").selectOption("HIGH");
   await page.getByLabel("Due date").fill("2026-12-31");
   await page.getByRole("button", { name: /create task/i }).click();

@@ -3,6 +3,7 @@ import {
   ADMIN_STATE,
   MEMBER_STATE,
   expectNoHorizontalOverflow,
+  selectAssignee,
 } from "./helpers";
 
 // Epic 8 (FR37–FR39): Trello-style board.
@@ -69,7 +70,7 @@ test.describe("admin board", () => {
     const todo = page.getByRole("region", { name: "To do" });
     await todo.getByRole("button", { name: /add a card/i }).click();
     await page.getByPlaceholder(/enter a title for this card/i).fill(title);
-    await page.getByLabel("Assignee").selectOption({ label: "Seed Member A" });
+    await selectAssignee(page, "Seed Member A");
     await page.getByLabel("Due date").fill("2026-12-31");
     await page.getByRole("button", { name: /^add card$/i }).click();
     // Assert on the card's title link (the status-select label also contains

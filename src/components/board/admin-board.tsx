@@ -19,6 +19,7 @@ import {
   PriorityLabel,
 } from "@/components/board/card-parts";
 import { STATUS_LABELS } from "@/components/tasks/badges";
+import { UserCombobox } from "@/components/tasks/user-combobox";
 import type { TaskStatus } from "@/lib/types/domain";
 import type { BoardTask, UserRef } from "@/server/queries/tasks";
 
@@ -215,22 +216,12 @@ function AddCardComposer({
         <label className="sr-only" htmlFor={`add-assignee-${status}`}>
           Assignee
         </label>
-        <select
-          id={`add-assignee-${status}`}
+        <UserCombobox
+          inputId={`add-assignee-${status}`}
           name="assigned_to"
-          required
-          defaultValue=""
-          className="w-full rounded border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
-        >
-          <option value="" disabled>
-            Assignee…
-          </option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.full_name || u.email}
-            </option>
-          ))}
-        </select>
+          users={users}
+          placeholder="Assignee…"
+        />
         <label className="sr-only" htmlFor={`add-due-${status}`}>
           Due date
         </label>
